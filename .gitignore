@@ -1,6 +1,16 @@
 HELP.md
+
+### Maven ###
 /target/
 !.mvn/wrapper/maven-wrapper.jar
+
+### Sensitive Config Files ###
+src/main/resources/application.properties
+
+### Sensitive Java Files (Temporary Ignore) ###
+src/main/java/com/midas/consulting/service/MicrosoftAuthenticationProvider.java
+src/main/java/com/midas/consulting/service/hrms/onedrive/OneDriveAuthService.java
+src/main/java/com/midas/consulting/constants/OneDriveConstants.java
 
 ### STS ###
 .apt_generated
@@ -28,7 +38,5 @@ HELP.md
 ### Database ###
 db/data/*
 
-#mac-os
-*.DS_Store
-
-
+### Mac OS ###
+.DS_Store
