@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:5.0
+    container_name: mongodb-dev
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: devpassword
+      MONGO_INITDB_DATABASE: hrms-dev
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./docker/mongodb/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - hrms-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - hrms-network
+
+  hrms-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hrms-api-dev
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+      - redis
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      - MONGODB_DATABASE=hrms-dev
+      - MONGODB_USERNAME=admin
+      - MONGODB_PASSWORD=devpassword
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - LOG_LEVEL=DEBUG
+      - JAVA_OPTS=-Xmx512m -Xms256m
+      - AWS_ACCESS_KEY_ID=your-dev-access-key
+      - AWS_SECRET_ACCESS_KEY=your-dev-secret-key
+      - AWS_BUCKET_NAME=hrms-dev-bucket
+      - MAIL_HOST=smtp.gmail.com
+      - MAIL_PORT=587
+      - MAIL_USERNAME=dev@example.com
+      - MAIL_PASSWORD=dev-app-password
+    volumes:
+      - ./logs:/app/logs
+      - ./temp:/tmp/ats-temp
+    networks:
+      - hrms-network
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  hrms-network:
+    driver: bridge
