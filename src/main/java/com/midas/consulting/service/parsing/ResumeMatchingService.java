@@ -2,48 +2,93 @@ package com.midas.consulting.service.parsing;
 
 import com.midas.consulting.dto.ResumeMatchResponse;
 import com.midas.consulting.util.PdfUtil;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Arrays;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class ResumeMatchingService {
 
-    public ResumeMatchResponse matchResume(MultipartFile file, String requirement) {
+    public ResumeMatchResponse matchResume(
+            MultipartFile file,
+            String requirement,
+            String candidateName,
+            String jobTitle
+    ) {
 
         String resumeText = PdfUtil.extractText(file).toLowerCase();
         String requirementText = requirement.toLowerCase();
 
-        // Split requirement words and remove small words
+        // Extract required skills (remove small words)
         List<String> requiredSkills = Arrays.stream(requirementText.split("\\s+"))
                 .filter(word -> word.length() > 2)
                 .distinct()
                 .collect(Collectors.toList());
 
-        int matchCount = 0;
+        List<String> matchedSkills = new ArrayList<>();
+        List<String> missingSkills = new ArrayList<>();
 
         for (String skill : requiredSkills) {
             if (resumeText.contains(skill)) {
-                matchCount++;
+                matchedSkills.add(skill);
+            } else {
+                missingSkills.add(skill);
             }
         }
 
+        return getResumeMatchResponse(
+                requiredSkills.size(),
+                matchedSkills,
+                missingSkills,
+                candidateName,
+                jobTitle
+        );
+    }
+
+    private static @NotNull ResumeMatchResponse getResumeMatchResponse(
+            int totalRequiredSkills,
+            List<String> matchedSkills,
+            List<String> missingSkills,
+            String candidateName,
+            String jobTitle
+    ) {
+
+        int matchCount = matchedSkills.size();
         int score = 0;
-        if (!requiredSkills.isEmpty()) {
-            score = (matchCount * 100) / requiredSkills.size();
+
+        if (totalRequiredSkills > 0) {
+            score = (matchCount * 100) / totalRequiredSkills;
         }
 
         ResumeMatchResponse response = new ResumeMatchResponse();
+
         response.setScore(score);
         response.setMatchedSkills(matchCount);
-        response.setTotalRequiredSkills(requiredSkills.size());
+        response.setTotalRequiredSkills(totalRequiredSkills);
+        response.setMatchedSkillList(matchedSkills);
+        response.setMissingSkillList(missingSkills);
+        response.setSuccess(score >= 60);
+        response.setEvaluatedAt(LocalDateTime.now());
 
-        if (score >= 80) response.setMessage("Excellent Match");
-        else if (score >= 60) response.setMessage("Good Match");
-        else response.setMessage("Low Match");
+        // ✅ NEW FIELDS
+        response.setCandidateName(candidateName);
+        response.setJobTitle(jobTitle);
+        response.setStatusCode(200);
+
+        if (!missingSkills.isEmpty()) {
+            response.setImprovementSuggestions(Collections.singletonList("Improve your resume by adding: " + String.join(", ", missingSkills)));
+        }
+
+        if (score >= 80)
+            response.setMessage("Excellent Match");
+        else if (score >= 60)
+            response.setMessage("Good Match");
+        else
+            response.setMessage("Low Match");
 
         return response;
     }

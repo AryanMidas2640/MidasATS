@@ -11,7 +11,6 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/v1/resume")
 @RequiredArgsConstructor
-@Service
 public class ResumeController {
 
     private final ResumeMatchingService matchingService;
@@ -19,10 +18,10 @@ public class ResumeController {
     @PostMapping("/match")
     public ResponseEntity<ResumeMatchResponse> matchResume(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("requirement") String requirement) {
+            @RequestParam("requirement") String requirement,String candidateName ,String jobTitle) {
 
         return ResponseEntity.ok(
-                matchingService.matchResume(file, requirement)
+                matchingService.matchResume(file, requirement,candidateName,jobTitle)
         );
     }
 }
